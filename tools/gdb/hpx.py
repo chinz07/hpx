@@ -222,7 +222,7 @@ class HPXThread():
 
     prev_context = self.context.switch()
     frame = gdb.newest_frame()
-    function_name = frame.function().name
+    function_name = frame.name()
     p = re.compile("^hpx::util::coroutines.*$")
 
     try:
@@ -230,13 +230,14 @@ class HPXThread():
         if frame.older() is None:
           break
         frame = frame.older()
-        function_name = frame.function().name
+        function_name = frame.name()
+
 
       if not frame.older() is None:
         frame = frame.older()
-        function_name = frame.function().name
-      line = frame.function().line
+        function_name = frame.name()
 
+      line = frame.function().line
       filename = frame.find_sal().symtab.filename
 
       self.pc_string = "0x%x in " % frame.pc() + "%s at " % function_name + "%s:" % filename + "%d" % line
@@ -272,13 +273,14 @@ class HPXListThreads(gdb.Command):
     return addr.reinterpret_cast(gdb.lookup_type("std::size_t").pointer()).dereference()
 
   def invoke(self, arg, from_tty):
-
-    runtime = gdb.selected_frame().read_var("hpx::runtime::runtime_::ptr_").dereference()#["ptr_"]
+    #gdb.selected_frame().read_var("hpx::runtime::runtime_")
+    runtime = gdb.lookup_global_symbol("hpx::runtime::runtime_").value()["ptr_"].dereference()
+    #gdb.selected_frame().read_var("hpx::runtime::runtime_.ptr_").dereference()#["ptr_"]
     thread_manager_ptr = runtime.cast(runtime.dynamic_type)["thread_manager_"]['px']
     thread_manager = thread_manager_ptr.cast(thread_manager_ptr.dynamic_type).dereference();
 
-    scheduler = thread_manager['scheduler_']
-    scheduler_type = scheduler.type.target().target()
+    scheduler = thread_manager['pool_']['sched_']
+    scheduler_type = scheduler.type.target()#.target()
 
     queues = {}
     for f in scheduler_type.fields():
