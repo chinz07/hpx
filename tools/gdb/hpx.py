@@ -66,7 +66,7 @@ class Unordered(object):
         '''Iterator for Boost.Unordered types'''
 
         def __init__(self, start_node, node_type, value_type, extractor):
-            assert start_node
+            #assert start_node
             self.node = None
             self.next_node = start_node
             self.node_type = node_type
@@ -293,8 +293,6 @@ class HPXListThreads(gdb.Command):
 
     for name in queues:
       if name == "queues_":
-        type = queues[name].type.strip_typedefs()
-
         item = queues[name]['_M_impl']['_M_start']
         end = queues[name]['_M_impl']['_M_finish']
 
@@ -309,6 +307,29 @@ class HPXListThreads(gdb.Command):
             print ""
           item = item + 1
           count = count + 1
+      if name == "high_priority_queues_":
+        item = queues[name]['_M_impl']['_M_start']
+        end = queues[name]['_M_impl']['_M_finish']
+
+        count = 0
+        while not item == end:
+          print "High Priority Thread queue %d:" % count
+          thread_map = Set(item.dereference().dereference()['thread_map_'])
+          for k, v in thread_map:
+            thread = HPXThread(v['px'])
+
+            thread.info()
+            print ""
+          item = item + 1
+          count = count + 1
+
+    print "Low priority queue:"
+    thread_map = Set(queues["low_priority_queue_"]['thread_map_'])
+    for k, v in thread_map:
+      thread = HPXThread(v['px'])
+
+      thread.info()
+      print ""
 
 class HPXGdbState():
   def __init__(self):
